@@ -1,0 +1,26 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ service_name }}
+  labels:
+    app: technitium
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      hostNetwork: true
+      restartPolicy: Always
+      containers:
+      - name: technitium
+        image: docker.io/technitium/dns-server:latest
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/dns
+          name: technitium
+      volumes:
+      - name: technitium
+        persistentVolumeClaim:
+          claimName: technitium

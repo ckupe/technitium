@@ -1,2 +1,15 @@
 ---
 # handlers file for .
+- name: systemctl restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+
+- name: systemctl reload-daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: systemctl restart {{ technitium_service_name }}.service
+  ansible.builtin.systemd:
+    name: "{{ technitium_service_name }}.service"
+    state: restarted

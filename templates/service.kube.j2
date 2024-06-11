@@ -1,0 +1,13 @@
+[Unit]
+Description={{ technitium_service_name }}
+After=default.target
+
+[Kube]
+Yaml={{ technitium_config_dir }}/deployment.yaml
+AutoUpdate=Registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

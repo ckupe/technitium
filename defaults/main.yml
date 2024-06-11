@@ -1,2 +1,4 @@
 ---
 # defaults file for .
+technitium_config_dir: /opt/technitium
+technitium_service_name: technitium

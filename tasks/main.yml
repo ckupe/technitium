@@ -1,2 +1,31 @@
 ---
 # tasks file for .
+- name: Write DNSStubListener=no config
+  ansible.builtin.template:
+    dest: /etc/systemd/resolved.conf.d/99-disable-stub-listener.conf
+    src: 99-disable-stub-listener.conf.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify: systemctl restart systemd-resolved
+  become: true
+
+- name: Write podman quadlet systemd unit file
+  ansible.builtin.template:
+    dest: "{{ technitium_config_dir }}/deployment.yaml"
+    src: deployment.yaml.j2
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  notify: systemctl reload-daemon
+
+- name: Write podman deployment yaml file
+  ansible.builtin.template:
+    dest: "/etc/containers/systemd/{{ technitium_service_name }}.kube"
+    src: service.kube.j2
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  notify: systemctl restart {{ technitium_service_name }}.service
