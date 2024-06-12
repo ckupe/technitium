@@ -2,15 +2,24 @@
 # tasks file for .
 - name: Write DNSStubListener=no config
   ansible.builtin.template:
-    dest: /etc/systemd/resolved.conf.d/99-disable-stub-listener.conf
-    src: 99-disable-stub-listener.conf.j2
+    dest: /etc/systemd/resolved.conf
+    src: resolved.conf.j2
     owner: root
     group: root
     mode: 0644
   notify: systemctl restart systemd-resolved
   become: true
 
-- name: Write podman quadlet systemd unit file
+- name: Ensure config dir exists
+  ansible.builtin.file:
+    path: "{{ technitium_config_dir }}"
+    state: directory
+    mode: 0644
+    owner: root
+    group: root
+  become: true
+
+- name: Write podman deployment yaml file
   ansible.builtin.template:
     dest: "{{ technitium_config_dir }}/deployment.yaml"
     src: deployment.yaml.j2
@@ -18,9 +27,11 @@
     group: root
     mode: 0644
   become: true
-  notify: systemctl reload-daemon
+  notify: 
+    - systemctl reload-daemon
+    - systemctl restart {{ technitium_service_name }}.service
 
-- name: Write podman deployment yaml file
+- name: Write podman quadlet systemd unit file
   ansible.builtin.template:
     dest: "/etc/containers/systemd/{{ technitium_service_name }}.kube"
     src: service.kube.j2
@@ -28,4 +39,44 @@
     group: root
     mode: 0644
   become: true
-  notify: systemctl restart {{ technitium_service_name }}.service
+  notify: 
+    - systemctl reload-daemon
+    - systemctl restart {{ technitium_service_name }}.service
+
+- name: Configure firewalld
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    immediate: yes
+    permanent: yes
+    state: enabled
+  with_items:
+    - 5380/tcp
+    - 53/tcp
+    - 53/udp
+  become: true
+
+- name: systemctl restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+  become: true
+  tags:
+    - never
+    - reload
+
+- name: systemctl reload-daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  tags:
+    - never
+    - reload
+
+- name: systemctl restart {{ technitium_service_name }}.service
+  ansible.builtin.systemd:
+    name: "{{ technitium_service_name }}.service"
+    state: restarted
+  become: true
+  tags:
+    - never
+    - reload
